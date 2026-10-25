@@ -145,7 +145,11 @@ case'pages':return `<p><button class="btn" data-a="newPage" data-p="">+ Crear nu
 case'pg':return pgForm();case'arts':return artList();case'art':return artForm();
 case'slides':return `<p><button class="btn" data-a="addSlide">+ Agregar diapositiva</button></p>${S.slides.map((x,i)=>{const k='slides.'+i;return `<div class="blk"><b>Diapositiva ${i+1}</b> <button data-a="mvSlide" data-i="${i}" data-d="-1">↑</button><button data-a="mvSlide" data-i="${i}" data-d="1">↓</button><button data-a="delSlide" data-i="${i}">Eliminar</button><div class="gr">${F('Título',k+'.title',x.title)}${F('Subtítulo',k+'.sub',x.sub)}${F('Descripción',k+'.desc',x.desc)}${F('Texto del botón',k+'.btn',x.btn)}${F('Enlace del botón',k+'.url',x.url)}${F('Duración (s)',k+'.sec',x.sec,'number','min=2')}</div>${U('Imagen (subir o URL)',k+'.img',x.img)}</div>`}).join('')}`;
 case'contact':return `<p><button class="btn" data-a="addContact">+ Agregar red</button></p>${S.contact.map((c,i)=>{const k='contact.'+i;return `<div class="blk"><button data-a="delContact" data-i="${i}">Eliminar</button><div class="gr">${F('Nombre',k+'.name',c.name)}${F('URL real',k+'.url',c.url)}${F('Descripción',k+'.desc',c.desc)}${F('Color del botón',k+'.color',c.color,'color')}</div>${U('Avatar / imagen',k+'.img',c.img)}</div>`}).join('')}`;
-case'data':return `<p>Los cambios se guardan solos en este navegador.</p><p><button class="btn" data-a="expZip">Exportar web (ZIP)</button> <button data-a="expJson">Exportar datos (JSON)</button> <button data-a="impJson">Importar datos</button> <button data-a="restore">Restaurar última copia</button> <button data-a="reset">Restablecer todo</button></p>`}}
+case'data':return `<p>Los cambios se guardan solos en este navegador.</p><p><button class="btn" data-a="expZip">Exportar web (ZIP)</button> <button data-a="expJson">Exportar datos (JSON)</button> <button data-a="impJson">Importar datos</button> <button data-a="restore">Restaurar última copia</button> <button data-a="reset">Restablecer todo</button></p>
+<hr><h3>🚀 Publicar en GitHub</h3>
+<p>Sube tu web a GitHub con un clic; GitHub Pages la actualiza en 1 o 2 minutos. El token se guarda <b>solo en este navegador</b> y nunca va dentro de la web publicada.</p>
+${(()=>{const c=ghGet();return `<div class="gr"><label class="f"><span>Usuario de GitHub</span><input id="ghu" value="${esc(c.user||'')}" placeholder="tu-usuario" autocomplete="off"></label><label class="f"><span>Repositorio</span><input id="ghr" value="${esc(c.repo||'')}" placeholder="nombre-del-repo" autocomplete="off"></label><label class="f"><span>Rama</span><input id="ghb" value="${esc(c.branch||'main')}" autocomplete="off"></label><label class="f"><span>Token ${c.token?'(guardado ✓, déjalo vacío para conservarlo)':''}</span><input id="ght" type="password" placeholder="${c.token?'••••••••':'github_pat_...'}" autocomplete="new-password"></label></div>`})()}
+<p><button class="btn" data-a="ghPublish">🚀 Publicar en GitHub</button> <button data-a="ghSave">Guardar configuración</button> <button data-a="ghForget">Borrar token</button></p>`}}
 function modal(){const m=$('#modal');if(!M.open){m.innerHTML='';return}const sc=$('.mc')?.scrollTop||0,tb=M.tab==='pg'?'pages':M.tab==='art'?'arts':M.tab;m.innerHTML=`<div class="ov"><div class="mb" role="dialog" aria-label="Editor"><div class="mh"><b>✏️ Editor ZoneByte</b><button data-a="close">✕ Cerrar</button></div><div class="tabs">${[['site','Sitio y diseño'],['pages','Páginas'],['arts','Artículos'],['slides','Carrusel'],['contact','Contacto'],['data','Datos y exportar']].map(([t,n])=>`<button data-a="tab" data-t="${t}" class="${t===tb?'on':''}">${n}</button>`).join('')}</div><div class="mc">${panel()}</div></div></div>`;$('.mc').scrollTop=sc}
 const done=()=>{save();render();modal()};
 const getA=()=>S.arts.find(a=>a.id===M.id);
@@ -155,6 +159,23 @@ async function expZip(){if(!window.JSZip)return toast('No se pudo cargar JSZip (
 z.file('index.html',SRC.replace(/<script id="seed">[\s\S]*?<\/script>/,()=>seed));z.file('datos/zonebyte-datos.json',data);
 z.file('LEEME.txt','ZoneByte (exportación)\n\n1. Sube index.html a cualquier hosting estático (Netlify, GitHub Pages, hosting con cPanel...). No requiere servidor ni configuración.\n2. El contenido va incrustado en index.html (incluidas las imágenes).\n3. Este index.html es la versión PÚBLICA: no incluye modo admin, ni botón de acceso, ni editor. Para hacer cambios, abre tu archivo original de ZoneByte (el editor), edita, exporta de nuevo y vuelve a subir index.html.\n4. datos/zonebyte-datos.json es tu copia de seguridad (Importar datos).\n5. Para que varias personas editen o haya login real hace falta un backend (base de datos + autenticación).\n');
 download(await z.generateAsync({type:'blob'}),'zonebyte-web.zip');toast('ZIP generado ✓')}
+/* ---------- publicar en GitHub ---------- */
+const GHK='zb1_gh';
+function ghGet(){try{return JSON.parse(localStorage.getItem(GHK))||{}}catch(e){return{}}}
+function ghSave(){const c=ghGet(),n={user:$('#ghu').value.trim(),repo:$('#ghr').value.trim(),branch:$('#ghb').value.trim()||'main',token:$('#ght').value.trim()||c.token||''};try{localStorage.setItem(GHK,JSON.stringify(n));toast('Configuración guardada ✓')}catch(e){toast('No se pudo guardar en este navegador','err')}modal()}
+function ghForget(){try{localStorage.removeItem(GHK)}catch(e){}toast('Token borrado de este navegador');modal()}
+function buildIndex(){const seed='<script id="seed">window.ZB_PUBLIC=1;window.ZB_SEED='+JSON.stringify(S).replace(/</g,'\\u003c')+'<'+'/script>';return SRC.replace(/<script id="seed">[\s\S]*?<\/script>/,()=>seed)}
+function b64(str){const b=new TextEncoder().encode(str);let r='';for(let i=0;i<b.length;i+=0x8000)r+=String.fromCharCode.apply(null,b.subarray(i,i+0x8000));return btoa(r)}
+async function ghPublish(){
+const c=ghGet();if(!c.user||!c.repo||!c.token)return toast('Completa y guarda usuario, repositorio y token primero','err');
+const url=`https://api.github.com/repos/${encodeURIComponent(c.user)}/${encodeURIComponent(c.repo)}/contents/index.html`,H={Authorization:'Bearer '+c.token,Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'};
+const why=r=>r.status===401?'Token inválido o vencido':r.status===403?'El token no tiene permiso (Contents: Read and write)':r.status===404?'Repositorio o rama no encontrados (revisa usuario, repo y rama)':r.status===409||r.status===422?'Conflicto al subir, intenta de nuevo':'Error '+r.status;
+try{toast('Publicando…');
+let sha;const g=await fetch(url+'?ref='+encodeURIComponent(c.branch),{headers:H,cache:'no-store'});
+if(g.ok)sha=(await g.json()).sha;else if(g.status!==404)return toast(why(g),'err');
+const p=await fetch(url,{method:'PUT',headers:{...H,'Content-Type':'application/json'},body:JSON.stringify({message:'Publicado desde ZoneByte '+new Date().toISOString().slice(0,16).replace('T',' '),content:b64(buildIndex()),branch:c.branch,...(sha?{sha}:{})})});
+if(!p.ok)return toast(why(p),'err');
+toast('Publicado ✓ La web se actualiza en 1 o 2 minutos')}catch(e){toast('No se pudo conectar con GitHub (revisa tu conexión)','err')}}
 /* ---------- eventos ---------- */
 document.addEventListener('click',e=>{if(!e.target.closest('.dd'))document.querySelectorAll('.dd.open').forEach(x=>x.classList.remove('open'));const t=e.target.closest('[data-a]');if(!t)return;const a=t.dataset.a,i=t.dataset.i,d=t.dataset.d;
 switch(a){
@@ -192,7 +213,7 @@ case'delContact':S.contact.splice(+i,1);done();break;
 case'theme':[['#8b5cf6','#3b82f6'],['#3b82f6','#22d3ee'],['#ef4444','#f97316']].forEach((c,j)=>{if(j===+i){S.site.a=c[0];S.site.b=c[1]}});done();break;
 case'clr':setP(t.dataset.k2,'');done();break;
 case'chpw':dlg('<h3>Nueva contraseña</h3><input type="password" id="pw" placeholder="Contraseña nueva"><input type="password" id="pw2" placeholder="Repetir">',setPw);break;
-case'expZip':expZip();break;
+case'expZip':expZip();break;case'ghPublish':ghPublish();break;case'ghSave':ghSave();break;case'ghForget':ghForget();break;
 case'expJson':download(new Blob([JSON.stringify(S)],{type:'application/json'}),'zonebyte-datos.json');break;
 case'impJson':$('#imp').click();break;
 case'restore':idb('get',KEY+'_bak').then(b=>{if(!b)return toast('No hay copia disponible','err');ask('¿Restaurar la última copia? Se reemplaza el contenido actual.',()=>{S=b;M={open:true,tab:'data'};done()})}).catch(()=>toast('No se pudo leer la copia','err'));break;
