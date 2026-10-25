@@ -70,6 +70,8 @@ arts:[{id:'s1',slug:'app-de-ejemplo',page:'apps',title:'App de ejemplo',sub:'Ed�
 contact:[{name:'YouTube',url:'',color:'#ef4444',desc:'Canal de ZoneByte',img:''},{name:'Instagram',url:'',color:'#d946ef',desc:'Perfil de ZoneByte',img:''}]});
 const PUB=!!window.ZB_PUBLIC;let S,ADM=false,M={},T,SR;try{ADM=!PUB&&sessionStorage.zbadm==='1'}catch(e){}
 S=window.ZB_SEED||DEF();
+/* Novedades automáticas: en la web pública se suman las de novedades.json (las actualiza GitHub Actions cada 24 hs) */
+if(PUB){fetch('novedades.json',{cache:'no-store'}).then(r=>r.ok?r.json():[]).then(a=>{if(!Array.isArray(a)||!a.length)return;const ids=new Set(S.arts.map(x=>x.id));S.arts=S.arts.concat(a.filter(x=>x&&x.id&&!ids.has(x.id))).sort((x,y)=>(y.date||'').localeCompare(x.date||''));render()}).catch(()=>{})}
 const idb=(m,k,v)=>new Promise((ok,no)=>{const r=indexedDB.open('zonebyte',1);r.onupgradeneeded=()=>r.result.createObjectStore('d');r.onerror=()=>no(r.error);r.onsuccess=()=>{const tx=r.result.transaction('d',m==='get'?'readonly':'readwrite'),st=tx.objectStore('d'),q=m==='get'?st.get(k):st.put(v,k);tx.oncomplete=()=>ok(q.result);tx.onerror=()=>no(tx.error)}});
 (async()=>{try{if(PUB)return;navigator.storage?.persist?.();let d=await idb('get',KEY);if(!d){try{d=JSON.parse(localStorage.getItem(KEY))}catch(e){}}if(d&&d.pages&&d.arts){S=d;render();modal()}}catch(e){}})();
 function toast(m,k){const t=$('#toast');t.textContent=m;t.className='on '+(k||'');clearTimeout(toast.t);toast.t=setTimeout(()=>t.className='',2800)}
