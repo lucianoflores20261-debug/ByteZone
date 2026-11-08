@@ -1,3 +1,0 @@
-User-agent: *
-Allow: /
-Sitemap: https://lucianoflores20261-debug.github.io/ByteZone/sitemap.xml
